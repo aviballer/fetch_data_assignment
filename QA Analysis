@@ -1,10 +1,10 @@
 Generate a query to capture data quality issues against the new structured relational data model
 
 
-Generally speaking I'd use the following framework to QA data issues.
+Generally speaking I'd use the following framework for QA.
 
 1. What is the fill/null rate for each field?
-2. Do all tables have unique values for each primary key we are using?
+2. Do all tables have unique values for each primary key and are foreign keys unique where expected?
 3. Do the preliminary KPIs that business users are likely to leverage make sense? (In this case I'd query the pricing and spending fields to make sure there are no parsing issues resulting in outliers)
 4. Do we have spending/receipt count data for all days or are we missing some due to an outage or other issues?
 5. Is the spend/transactions per user on average consistent overtime? Are there any outliers with user level spending that we need to look into?
