@@ -1,0 +1,19 @@
+Which brand has the most spend among users who were created within the past 6 months?
+
+
+
+with userbase AS (
+    select distinct userId
+    from Users
+    where createdDate >= current_date - INTERVAL 6 MONTH
+)
+
+select Brands.name, 
+sum(quantityPurchased*coalesce(discountedItemPrice, finalPrice, itemPrice)) as spend
+from Items
+inner join userbase on Items.userId = userbase.userId
+left join Brands on Items.barcode = Brands.barcode
+where Brands.name is not null
+group by 1
+order by 2 desc
+limit 1
