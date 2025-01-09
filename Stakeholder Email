@@ -1,0 +1,69 @@
+I was not sure if I was supposed to answer all of these questions individually as seperate slack messages or communicate my work as a whole to a non-technical stakeholder. 
+
+In the question prompt:
+
+Construct an email or slack message that is understandable to a product or business leader who isn’t familiar with your day to day work. This part of the exercise should show off how you communicate and reason about data with others.
+Commit your answers to the git repository along with the rest of your exercise.
+
+"Construct an email or slack message" suggests to just draft one message. But then later on the prompt asks you to "commit you answers" which suggests multiple slacks/emails linked to each sub-question.
+
+I went with my gut and just drafted one email.
+
+________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________________
+
+Hi xxx, 
+
+I've finished organizing the data into tables that you can query. 
+
+Currently we have 4 tables:
+
+    -Brands: This table has each brand (identified by brandId, barcode, and brandCode) in our system along with the matched category and parent CPG information. This table is mostly static and is only updated when we get new brands or new information on existing brands.
+              You can use this table to join on the Receipts and Items table using barcode in order to perform brand or CPG related analysis.
+    -Users: This table has all of our users (identified by userid) along with fields that are useful for panelization or user-level analysis (createdDate, lastLogin).
+    -Receipts: This table has receipt level information, similar to an orders or transation table. You'll want to use this table when performing receipt-level aggregated insights related to total spend on the receipt or points for the whole receipt.
+    -Items: This table has item level information from all of the receipts in the Receipts table. This includes item price information, item quantity, and barcodes (which can be used to join the Brand table on)
+
+Attached to this email is the full data model so you can see how the fields are connected to each other. I've also included a sample query that calculates the top Brand spend for users who joined in the last 6 months so you can get a feel for how to use all tables together.
+
+In order to get this ready for production, I do have a couple questions about the data and how its going to be used to make this solution more scalable. 
+
+1. While checking the match rates for the "barcode" field in the Brands table, I notices a couple of barcodes are matched to more than 1 brand, which will complicate any brand-level analysis we'll want to do. Is there a better source of truth for Brand and CPG Collection info that I can reference to clean this data up?
+
+2. I'd like to make reporting tables that have aggregated KPIs if possible. This would speed-up an analysis you're doing and would help us save on compute costs. What level of granularities will you be needing for your analyses in general with regards to time-frame (daily, weekly, or monthly) or item vs. brand-level (Doritos Cool Ranch vs. Doritos).
+
+3. How are you going to leverage the KPI fields and which ones are the most important (receipt-level spend, item price info, discounting info, item quantity purchased, rewards info, or anything else I missed)
+
+Thanks
+Avi
+
+***Sample Query***
+
+Here is a sample query that calculates the top Brand spend for users who joined in the last 6 months. The query leverages the users, items, and brands table.
+
+with userbase AS (
+    select distinct userId
+    from Users
+    where createdDate >= current_date - INTERVAL 6 MONTH
+)
+
+select Brands.name, 
+sum(quantityPurchased*coalesce(discountedItemPrice, finalPrice, itemPrice)) as spend
+from Items
+inner join userbase on Items.userId = userbase.userId
+left join (
+   select distinct barcode as key, name
+   from Brands
+   union
+   select distinct brandCode as key, name
+   from Brands
+) Brands on Items.barcode = Brands.key
+where Brands.name is not null
+group by 1
+order by 2 desc
+limit 1
+
+
+
+
+
+
