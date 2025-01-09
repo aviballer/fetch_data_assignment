@@ -12,7 +12,13 @@ select Brands.name,
 sum(quantityPurchased*coalesce(discountedItemPrice, finalPrice, itemPrice)) as spend
 from Items
 inner join userbase on Items.userId = userbase.userId
-left join Brands on Items.barcode = Brands.barcode
+left join (
+   select distinct barcode as key, name
+   from Brands
+   union
+   select distinct brandCode as key, name
+   from Brands
+) Brands on Items.barcode = Brands.key
 where Brands.name is not null
 group by 1
 order by 2 desc
